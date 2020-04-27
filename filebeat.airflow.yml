@@ -1,0 +1,25 @@
+filebeat.inputs:
+  - type: log
+    enabled: true
+    paths:
+      - /ops/prod/airflow_cel/logs/**/*.log
+    recursive_glob: enabled
+
+
+processors:
+- truncate_fields:
+    fields:
+      - message
+    max_characters: 1500
+
+output.elasticsearch:
+  hosts: '${ELASTICSEARCH_HOSTS:elasticsearch:9200}'
+  index: "filebeat_airflow_logs"
+
+setup.template:
+  name: 'filebeat_airflow_logs'
+  pattern: 'filebeat_airflow_logs-*'
+  enabled: true
+
+setup.ilm.enabled: false
+

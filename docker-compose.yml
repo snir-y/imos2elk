@@ -1,0 +1,91 @@
+version: '3.7'
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.6.1
+    container_name: elasticsearch
+    restart: always
+    environment: 
+      - "discovery.type=single-node"
+      - "cluster.name=es-docker-cluster"
+      - "bootstrap.memory_lock=true"
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports: 
+      - 9200:9200
+      - 9300:9300
+    networks:
+      - prod
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+  
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.6.1
+    container_name: kibana
+    restart: always
+    environment:
+      # SERVER_NAME: kibana.example.org
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    ports:
+      - 5601:5601
+    networks: 
+      - prod
+    depends_on: 
+      - elasticsearch
+  
+  filebeat_docker:
+    image: docker.elastic.co/beats/filebeat:7.6.1
+    container_name: filebeat_docker
+    hostname: "filebeat-docker"
+    restart: always
+    command: filebeat -e -strict.perms=false
+    user: root
+    environment: 
+      - "ELASTICSEARCH_HOST=http://elasticsearch:9200"
+    networks: 
+      - prod
+    volumes:
+      - "./filebeat.docker.yml:/usr/share/filebeat/filebeat.yml:ro"
+      - "/var/lib/docker/containers:/var/lib/docker/containers:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    depends_on: 
+      - elasticsearch
+  
+  # filebeat_airflow:
+  #   image: docker.elastic.co/beats/filebeat:7.6.1
+  #   container_name: filebeat_airflow
+  #   hostname: "filebeat_airflow"
+  #   restart: always
+  #   command: filebeat -e -strict.perms=false
+  #   user: root
+  #   environment: 
+  #     - "ELASTICSEARCH_HOST=http://elasticsearch:9200"
+  #   networks: 
+  #     - prod
+  #   volumes:
+  #     - "./filebeat.airflow.yml:/usr/share/filebeat/filebeat.yml:ro"
+  #     - "/ops/prod/airflow_cel/logs:/ops/prod/airflow_cel/logs:ro"
+  #   depends_on: 
+  #     - elasticsearch
+    
+  elasticsearch_exporter:
+    image: justwatch/elasticsearch_exporter:1.1.0
+    command:
+      - '--es.uri=http://elasticsearch:9200'
+    restart: always
+    ports:
+      - 9114:9114
+    networks: 
+      - prod
+    depends_on: 
+      - elasticsearch
+
+
+
+
+networks:
+  prod:
+    external:
+      name: prod
+
+volumes:
+  elasticsearch_data:
+    driver: local

@@ -1,0 +1,23 @@
+filebeat.config:
+  modules:
+    path: ${path.config}/modules.d/*.yml
+    reload.enabled: false
+
+filebeat.autodiscover:
+  providers:
+    - type: docker
+      hints.enabled: true
+
+processors:
+- add_cloud_metadata: ~
+
+output.elasticsearch:
+  hosts: '${ELASTICSEARCH_HOSTS:elasticsearch:9200}'
+  index: "filebeat_docker_logs"
+
+setup.template:
+  name: 'filebeat_docker_logs'
+  pattern: 'filebeat_docker_logs-*'
+  enabled: true
+
+setup.ilm.enabled: false
