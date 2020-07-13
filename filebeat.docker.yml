@@ -20,4 +20,4 @@ setup.template:
   pattern: 'filebeat_docker_logs-*'
   enabled: true
 
-setup.ilm.enabled: false
+setup.ilm.enabled: true
